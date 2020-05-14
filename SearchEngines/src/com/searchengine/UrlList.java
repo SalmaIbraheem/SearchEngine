@@ -11,7 +11,7 @@ public class UrlList {
 	
 	public UrlList(DBManager dbMan) {
 		this.dbMan = dbMan;
-		lastPosition = -1;
+		this.lastPosition = -1;
 		urls = new ArrayList<String>();
 	}
 	
