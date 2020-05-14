@@ -47,6 +47,23 @@ public class DBManager {
 				"end;";
 		
 		mDB.executeQuery(queryString);
+		//words table
+		queryString = "if(object_id('words','U') is null)"+
+		"begin"+
+		"create table words (id int not null IDENTITY(1,1) primary key,stem varchar(50) not null ,word varchar(50) not null); "+
+		"end;";
+		mDB.executeQuery(queryString);
+		
+		//words_websites table
+		queryString = "if(object_id('words_websites','U') is null)"+
+		"begin"+
+		"create table words_websites (word_id int not null,URL varchar(3000) not null,score int DEFAULT 0,"+
+		"total_occur int DEFAULT 0,first_position int DEFAULT 0 "+
+		",FOREIGN KEY (word_id) REFERENCES words(id) "+
+		" ,FOREIGN KEY (URL) REFERENCES websites(URL)"+
+		", CONSTRAINT p_key PRIMARY KEY(word_id,URL))"+
+		"end;";
+		mDB.executeQuery(queryString);
 		//make sure database if empty to insert seeds (in case of interrupt)
 		ArrayList<String> table = getUrls();
 		if(table.size() == 0) {
