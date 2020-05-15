@@ -18,6 +18,7 @@ public class DBManager {
 
 	
 	private JDataBase mDB;
+	private Tf_idf rank;
 	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
 	private static final int mNumberOfSeeds = 2;
 	private boolean interrupt = false;
@@ -49,15 +50,15 @@ public class DBManager {
 		mDB.executeQuery(queryString);
 		//words table
 		queryString = "if(object_id('words','U') is null)"+
-		"begin"+
+		"begin \r\n"+
 		"create table words (id int not null IDENTITY(1,1) primary key,stem varchar(50) not null ,word varchar(50) not null); "+
 		"end;";
 		mDB.executeQuery(queryString);
 		
 		//words_websites table
 		queryString = "if(object_id('words_websites','U') is null)"+
-		"begin"+
-		"create table words_websites (word_id int not null,URL varchar(3000) not null,score int DEFAULT 0,"+
+		"begin \r\n"+
+		"create table words_websites (word_id int not null,URL varchar(3000) not null,score float DEFAULT 0,"+
 		"total_occur int DEFAULT 0,first_position int DEFAULT 0 "+
 		",FOREIGN KEY (word_id) REFERENCES words(id) "+
 		" ,FOREIGN KEY (URL) REFERENCES websites(URL)"+
@@ -167,6 +168,46 @@ public class DBManager {
         catch (Exception e) { 
             return false; 
         } 
-    } 
+    }
+    
+    ///////////////////////////////ranking//////////////////////////////////
+    public void getWords() throws SQLException {
+		rank = new Tf_idf();
+		
+		String query = "select *\r\n" + 
+				"	from websites join words_websites\r\n" + 
+				"	on websites.URL = words_websites.URL;";
+		
+		ResultSet words = mDB.getResult(query);
+		query ="select count (*) from websites;";
+		ResultSet c= mDB.getResult(query);
+		int totDoc=0;
+		while(c.next())
+		{
+			 totDoc =  Integer.parseInt(c.getString(""));
+		}
+		
+		//to concatenate query and execute them all
+		String update_query = "";
+		int occur=0;
+		int totWord = 0,docOccur = 0;
+		double score;
+		
+		while (words.next()) {
+			occur = Integer.parseInt(words.getString("total_occur"));
+			totWord= Integer.parseInt(words.getString("size"));
+			query= "select count(*) from words_websites where word_id="+ words.getString("word_id")+";";
+			c = mDB.getResult(query);			
+			while(c.next())
+			{
+				 docOccur =  Integer.parseInt(c.getString(""));
+			}
+			score = rank.tfIdf(occur, totWord, totDoc, docOccur);
+			System.out.println(score);
+			update_query += "UPDATE words_websites SET score="+ score +"WHERE (URL = '"+words.getString("URL")+"' and word_id = "+words.getString("word_id")+");\r\n";
+		}
+		mDB.executeQuery(update_query);
+		
+	}
 }
 	  
