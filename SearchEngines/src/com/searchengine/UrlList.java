@@ -36,6 +36,7 @@ public class UrlList {
 				return urls.get(lastPosition);
 			}
 		}
+		Update();
 		System.out.println(urls.size());
 		System.out.println(lastPosition);
 		return null;

@@ -20,6 +20,7 @@ public class DBManager {
 
 	
 	private JDataBase mDB;
+	private Tf_idf rank;
 	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
 	private static final int mNumberOfSeeds = 2;
 	private boolean interrupt = false;
@@ -66,7 +67,7 @@ public class DBManager {
 		"end;\r\n";
 		
 		mDB.executeQuery(queryString);
-		
+
 		//make sure database if empty to insert seeds (in case of interrupt)
 		ArrayList<String> table = getUrls();
 		if(table.size() == 0) {
@@ -143,5 +144,45 @@ public class DBManager {
             return false; 
         } 
     }
+    
+    ///////////////////////////////ranking//////////////////////////////////
+    public void getWords() throws SQLException {
+		rank = new Tf_idf();
+		
+		String query = "select *\r\n" + 
+				"	from websites join words_websites\r\n" + 
+				"	on websites.URL = words_websites.URL;";
+		
+		ResultSet words = mDB.getResult(query);
+		query ="select count (*) from websites;";
+		ResultSet c= mDB.getResult(query);
+		int totDoc=0;
+		while(c.next())
+		{
+			 totDoc =  Integer.parseInt(c.getString(""));
+		}
+		
+		//to concatenate query and execute them all
+		String update_query = "";
+		int occur=0;
+		int totWord = 0,docOccur = 0;
+		double score;
+		
+		while (words.next()) {
+			occur = Integer.parseInt(words.getString("total_occur"));
+			totWord= Integer.parseInt(words.getString("size"));
+			query= "select count(*) from words_websites where word_id="+ words.getString("word_id")+";";
+			c = mDB.getResult(query);			
+			while(c.next())
+			{
+				 docOccur =  Integer.parseInt(c.getString(""));
+			}
+			score = rank.tfIdf(occur, totWord, totDoc, docOccur);
+			System.out.println(score);
+			update_query += "UPDATE words_websites SET score="+ score +"WHERE (URL = '"+words.getString("URL")+"' and word_id = "+words.getString("word_id")+");\r\n";
+		}
+		mDB.executeQuery(update_query);
+		
+	}
 }
 	  
