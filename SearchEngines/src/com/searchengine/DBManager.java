@@ -14,6 +14,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import com.microsoft.sqlserver.jdbc.SQLServerException;
+
 public class DBManager {
 
 	
@@ -22,11 +24,9 @@ public class DBManager {
 	private static final int mNumberOfSeeds = 2;
 	private boolean interrupt = false;
 	private String insertQuery = "";
-	private int insertNumbers = 0;
-	private int crawledLinks = 0;
 	  
 	  
-	public DBManager() throws SQLException {
+	public DBManager() throws SQLException, IOException {
 		mDB = new JDataBase();
 		
 		String queryString= "if (object_id('websites', 'U') is null) \r\n" + 
@@ -34,7 +34,8 @@ public class DBManager {
 				"CREATE TABLE websites( id int not null IDENTITY(1,1) , \r\n" + 
 				"						URL varchar(3000) not null,\r\n" + 
 				"						crawled int DEFAULT 0,\r\n" + 
-				"						size int not null,\r\n" + 
+				"						content varchar(max) not null,\r\n" + 
+				"						size int DEFAULT 0,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
 				"						primary key (URL)); \r\n" + 
 				"end;\r\n";
@@ -44,9 +45,28 @@ public class DBManager {
 				"CREATE TABLE Pointers(url1_id varchar(3000) not null,\r\n" + 
 				"					  url2_id varchar(3000) not null,\r\n" + 
 				"					  foreign key (url2_id) references websites(URL));\r\n" + 
-				"end;";
+				"end;\r\n";
+
+		
+		//words table
+		queryString += "if(object_id('words','U') is null)\r\n"+
+		"begin\r\n"+
+		"create table words (id int not null IDENTITY(1,1) primary key,stem varchar(50) not null ,word varchar(50) not null);\r\n "+
+		"end;\r\n";
+		mDB.executeQuery(queryString);
+		
+		//words_websites table
+		queryString += "if(object_id('words_websites','U') is null)\r\n"+
+		"begin\r\n"+
+		"create table words_websites (word_id int not null,URL varchar(3000) not null,score int DEFAULT 0,"+
+		"total_occur int DEFAULT 0,first_position int DEFAULT 0 "+
+		",FOREIGN KEY (word_id) REFERENCES words(id) "+
+		" ,FOREIGN KEY (URL) REFERENCES websites(URL)"+
+		", CONSTRAINT p_key PRIMARY KEY(word_id,URL))\r\n"+
+		"end;\r\n";
 		
 		mDB.executeQuery(queryString);
+		
 		//make sure database if empty to insert seeds (in case of interrupt)
 		ArrayList<String> table = getUrls();
 		if(table.size() == 0) {
@@ -56,12 +76,18 @@ public class DBManager {
 			this.interrupt = true;
 		}
 	}
-	private void insertSeeds() {
+	private void insertSeeds() throws IOException {
 		for(int i = 0; i < mNumberOfSeeds; i++) {
+			Document doc = Jsoup.connect(mSeeds[i]).get();
+			String text = doc.body().text();
+			text = text.replaceAll("\\s+","");
+			text = text.replaceAll("'","");
+			text = text.replaceAll("\\?","");
+			
+			//System.out.println(text);
 			mDB.executeQuery("IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+mSeeds[i]+"'))\r\n" + 
 					"BEGIN\r\n" + 
-					"	\r\n" + 
-					"	INSERT INTO websites (\"URL\",\"size\")VALUES ('"+mSeeds[i]+"',"+mSeeds[i].length()+");\r\n" + 
+					"INSERT INTO websites (\"URL\",\"childern\",\"content\")VALUES ('"+mSeeds[i]+"',"+doc.select("a[href]").size()+",'"+text+"');" + 
 					"END;");
 		}
 	}
@@ -83,60 +109,26 @@ public class DBManager {
 	public boolean isInterrupt() {
 		return interrupt;
 	}
-	public void crawlPage(String URL) throws SQLException, IOException{
-		Document doc = Jsoup.connect(URL).get();
-		int rejectedLinks = 0;					//links has no permissions to be showed
-		
-		//get all links and recursively call crawlPage
-		Elements hyberLinks = doc.select("a[href]");
-		System.out.println(hyberLinks.size());
-		//sign it as crawled and insert number of its hyberlinks - websites with no permission
-		String query = "UPDATE websites SET childern ="+hyberLinks.size()+" WHERE (URL = '"+URL+"');";
-		mDB.executeQuery(query);
-		
-		for(Element link: hyberLinks){
-			hyberLinks.size();
-			if(crawledLinks < 5000) {
-				if(checkRobot(link.attr("abs:href"))) {
-					addLink(URL,link.attr("abs:href"));
-					if(insertNumbers < 10 && insertNumbers != 0)mDB.executeQuery(insertQuery);
-					crawledLinks++;
-				}else {
-					rejectedLinks++;
-				}
-			}
-		}
-	}
 	
-	private void addLink(String parent, String link) throws IOException, SQLException {
+	public void addLink(String parent, String link,int hyberLinksSize,String content) throws IOException, SQLException {
 		//get permission from robots.txt
-		System.out.println(link);
-		//access only web site with type "HTML"
-		if(Jsoup.connect(link).get().documentType().name().equals("html")) {
-			//check if it's already in database
-			this.insertQuery +="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"'))\r\n" + 
-					"BEGIN\r\n" + 
-					"	INSERT INTO websites (\"URL\",\"size\")VALUES ('"+link+"',"+link.length()+");" + 
-					"END;\r\n";
-			//add to the relation between urls 
-			this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
-					"BEGIN \r\n" + 
-					"	INSERT INTO Pointers (url1_id,url2_id) Values('"+parent+"','"+link+"')\r\n" + 
-					"END;\r\n";
-			
-			insertNumbers++;
-			if(insertNumbers == 10) {
-				insertNumbers = 0;
-				mDB.executeQuery(insertQuery);
-			}
-		}
-	}
-	public boolean checkRobot(String URL) {
+		if(content.length() > 7000) content = content.substring(0,7000);
+		//System.out.println(content);
 		
-		return true;
-		
+		//check if it's already in database
+		this.insertQuery ="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"'))\r\n" + 
+				"BEGIN\r\n" + 
+				"	INSERT INTO websites (\"URL\",\"size\",\"childern\",\"content\")VALUES ('"+link+"',"+link.length()+","+hyberLinksSize+",'"+content+"');\r\n" ;
+		//add to the relation between urls 
+		this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
+				"BEGIN \r\n" + 
+				"	INSERT INTO Pointers (url1_id,url2_id) Values('"+parent+"','"+link+"');\r\n" + 
+				"END;\r\n"+ 
+				"END;\r\n";;
+		mDB.executeQuery(this.insertQuery);
 	}
 
+ 
     public static boolean isValid(String url) 
     { 
         /* Try creating a valid URL */
@@ -150,6 +142,6 @@ public class DBManager {
         catch (Exception e) { 
             return false; 
         } 
-    } 
+    }
 }
 	  
