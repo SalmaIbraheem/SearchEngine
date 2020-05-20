@@ -8,6 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -20,7 +23,6 @@ public class DBManager {
 
 	
 	private JDataBase mDB;
-	private Ranker rank;
 	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
 	private static final int mNumberOfSeeds = 2;
 	private boolean interrupt = false;
@@ -149,20 +151,7 @@ public class DBManager {
     ///////////////////////////////ranking//////////////////////////////////
     
     
-    public int getTotPages()throws SQLException {
-    	
-    	String query ="select count (*) from websites;";
-		ResultSet c= mDB.getResult(query);
-		int totDoc=0;
-		while(c.next())
-		{
-			 totDoc =  Integer.parseInt(c.getString(""));
-		}
-		return totDoc;
-		
-    	
-    }
-    
+   
     public void setInitPR(float n)throws SQLException {
     	String query="update websites  set PR="+ 1.0/n+";";
     	mDB.executeQuery(query);
@@ -188,55 +177,59 @@ public class DBManager {
     	return c;
     }
     
-    public void setPR(ArrayList<Float> Pr,ArrayList<String> url)throws SQLException {
+    public void setPR(HashMap<String, Float> ranks)throws SQLException {
     	String query= "";
-    	System.out.println(Pr.size());
-    	for(int i=0;i<Pr.size();i++) {
-    	 query+="update websites set PR="+Pr.get(i)+" where URL= '"+url.get(i)+"';\r\n";
-    	
-    	}
+    	for (Entry<String, Float> entry : ranks.entrySet()) {
+		   
+		    query+="update websites set PR="+entry.getValue()+" where URL= '"+entry.getKey()+"';\r\n";
+		    
+		}
+    
     	mDB.executeQuery(query);
     }
     
-    public void rankTf() throws SQLException {
-		rank = new Ranker();
-		
-		String query = "select *\r\n" + 
-				"	from websites join words_websites\r\n" + 
-				"	on websites.URL = words_websites.URL;";
-		
-		ResultSet words = mDB.getResult(query);
-		query ="select count (*) from websites;";
+    ////////////////////////////////////////////Relvence Ranking///////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    public ResultSet getWordsOfPages() {
+    	String query = "select total_occur,size,websites.URL,word_id,\n" + 
+    			"count(*)over (partition by word_id) as c\n" + 
+    			" from websites join words_websites \n" + 
+    			" on websites.URL = words_websites.URL ;\n" ;
+    	
+    	ResultSet words = mDB.getResult(query);
+    	return words;
+    }
+    
+    public int getTotPages()throws SQLException {
+    	
+    	String query ="select count (*) from websites;";
 		ResultSet c= mDB.getResult(query);
 		int totDoc=0;
 		while(c.next())
 		{
 			 totDoc =  Integer.parseInt(c.getString(""));
 		}
+		return totDoc;
 		
-		//to concatenate query and execute them all
-		String update_query = "";
-		int occur=0;
-		int totWord = 0,docOccur = 0;
-		double score;
-		
-		while (words.next()) {
-			occur = Integer.parseInt(words.getString("total_occur"));
-			totWord= Integer.parseInt(words.getString("size"));
-			query= "select count(*) from words_websites where word_id="+ words.getString("word_id")+";";
-			c = mDB.getResult(query);			
-			while(c.next())
-			{
-				 docOccur =  Integer.parseInt(c.getString(""));
-			}
-			score = rank.tfIdf(occur, totWord, totDoc, docOccur);
-			System.out.println(score);
-			update_query += "UPDATE words_websites SET score="+ score +"WHERE (URL = '"+words.getString("URL")+"' and word_id = "+words.getString("word_id")+");\r\n";
-		}
-		mDB.executeQuery(update_query);
-		
-	}
+    	
+    }
     
+    public void setTf(ArrayList<String>url,ArrayList<String>wordId,ArrayList<Float>rank)throws SQLException {
+    	String query= "";
+    	for (int i=0;i<url.size();i++) {
+		   
+    		query += "UPDATE words_websites SET score="+ rank.get(i) +"WHERE (URL = '"+url.get(i)+"' and word_id = "+wordId.get(i)+");\r\n";
+		    
+		}
+    
+    	mDB.executeQuery(query);
+    } 
+    
+    
+
+		
+
     
     
 
