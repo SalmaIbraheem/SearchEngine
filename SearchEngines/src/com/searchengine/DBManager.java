@@ -38,7 +38,7 @@ public class DBManager {
 				"						URL varchar(3000) not null,\r\n" + 
 				"						crawled int DEFAULT 0,\r\n" + 
 				"						content varchar(max) not null,\r\n" + 
-				"						size int DEFAULT 0,\r\n" + 
+				"						size int DEFAULT 1,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
 				"						PR float DEFAULT 0,\r\n" + 
 				"						primary key (URL)); \r\n" + 
@@ -122,7 +122,7 @@ public class DBManager {
 		//check if it's already in database
 		this.insertQuery ="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"'))\r\n" + 
 				"BEGIN\r\n" + 
-				"	INSERT INTO websites (\"URL\",\"size\",\"childern\",\"content\")VALUES ('"+link+"',"+link.length()+","+hyberLinksSize+",'"+content+"');\r\n" ;
+				"	INSERT INTO websites (\"URL\",\"childern\",\"content\")VALUES ('"+link+"',"+hyberLinksSize+",'"+content+"');\r\n" ;
 		//add to the relation between urls 
 		this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
 				"BEGIN \r\n" + 
@@ -228,7 +228,68 @@ public class DBManager {
     
     
 
-		
+		    
+//////////////indexer functions /////////////////////
+    void insert_words_count(String url,int count)
+    {
+    	String query = "UPDATE websites SET size = "+count+" WHERE URL = \'"+url+"\'";
+    	System.out.println(count);
+    	System.out.println(query);
+    	mDB.executeQuery(query);
+    }
+    void insert_words(ArrayList<String> words , String url) throws SQLException
+    {
+    	for(String s :words)
+		{
+			//System.out.println(s);
+    		//check if word exists in words table
+			String query = "select id from words where word = \'"+s+"\';";
+			//System.out.println(query);
+			ResultSet rs = mDB.getResult(query);
+			
+			if(rs.next()) //word already inserted in words table
+			{
+				//System.out.println(rs.getInt(1));
+				insert_word_website(rs.getInt(1), url);
+			}
+			else {
+				//stem word
+				PorterStemmer porter = new PorterStemmer();
+				String stem = porter.stem(s);
+				query = "INSERT INTO words (stem,word) values (\'"+stem+"\',\'"+s+"\')";
+				//System.out.println(query);
+				mDB.executeQuery(query);
+				//get id of the inserted
+				query = "select id from words where word = \'"+s+"\';";
+				rs = mDB.getResult(query);
+				if(rs.next())
+				{
+					insert_word_website(rs.getInt(1), url);
+				}
+			}
+		}
+    }
+    void insert_word_website(int id,String url) throws SQLException
+    {
+    	String query = "select total_occur from words_websites where word_id = "+Integer.toString(id)+" AND URL = \'"+url+"\'";
+    	ResultSet rs = mDB.getResult(query);
+    	if(rs.next())
+    	{
+    		
+    		query = "update words_websites set total_occur = " +Integer.toString(rs.getInt(1)+1)+" where word_id = "+Integer.toString(id)+" AND URL = \'"+url+"\'";
+    		//System.out.println(query);
+    		mDB.executeQuery(query);
+    	}
+    	else
+    	{
+    		query = "insert into words_websites (word_id,URL) values (\'"+Integer.toString(id)+"\',\'"+url+"\') ;";
+    		//System.out.println(query);
+    		mDB.executeQuery(query);
+    	}
+    	
+    	
+    }
+//////////////indexer functions /////////////////////
 
     
     
