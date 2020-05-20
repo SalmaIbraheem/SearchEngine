@@ -18,7 +18,7 @@ public class DBManager {
 
 	
 	private JDataBase mDB;
-	private Tf_idf rank;
+	private Ranker rank;
 	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
 	private static final int mNumberOfSeeds = 2;
 	private boolean interrupt = false;
@@ -37,6 +37,7 @@ public class DBManager {
 				"						crawled int DEFAULT 0,\r\n" + 
 				"						size int not null,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
+				"						PR float DEFAULT 0,\r\n" + 
 				"						primary key (URL)); \r\n" + 
 				"end;\r\n";
 		
@@ -171,8 +172,59 @@ public class DBManager {
     }
     
     ///////////////////////////////ranking//////////////////////////////////
-    public void getWords() throws SQLException {
-		rank = new Tf_idf();
+    
+    
+    public int getTotPages()throws SQLException {
+    	
+    	String query ="select count (*) from websites;";
+		ResultSet c= mDB.getResult(query);
+		int totDoc=0;
+		while(c.next())
+		{
+			 totDoc =  Integer.parseInt(c.getString(""));
+		}
+		return totDoc;
+		
+    	
+    }
+    
+    public void setInitPR(float n)throws SQLException {
+    	String query="update websites  set PR="+ 1.0/n+";";
+    	mDB.executeQuery(query);
+    }
+    
+    public ResultSet pagesUrl()throws SQLException{
+    	String query="select URL,PR from websites;";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    
+    public ResultSet getLinkedPages(String page)throws SQLException{
+    	String query="Select url1_id,childern,PR FROM Pointers T1  JOIN websites T2 ON T1.url1_id = T2.URL where (T1.url2_id = '"+page+"');";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    public ResultSet getPR()throws SQLException{
+    	String query="with temp as (select (PR/childern) as x ,URL,url2_id\n" + 
+    			"FROM Pointers T1  JOIN websites T2 ON T1.url1_id = T2.URL\n" + 
+    			" )\n" + 
+    			"select sum(x) as r,url2_id from temp group by url2_id;";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    
+    public void setPR(ArrayList<Float> Pr,ArrayList<String> url)throws SQLException {
+    	String query= "";
+    	System.out.println(Pr.size());
+    	for(int i=0;i<Pr.size();i++) {
+    	 query+="update websites set PR="+Pr.get(i)+" where URL= '"+url.get(i)+"';\r\n";
+    	
+    	}
+    	mDB.executeQuery(query);
+    }
+    
+    public void rankTf() throws SQLException {
+		rank = new Ranker();
 		
 		String query = "select *\r\n" + 
 				"	from websites join words_websites\r\n" + 
@@ -209,5 +261,9 @@ public class DBManager {
 		mDB.executeQuery(update_query);
 		
 	}
+    
+    
+    
+
 }
 	  
