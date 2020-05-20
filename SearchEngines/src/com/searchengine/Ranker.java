@@ -26,7 +26,7 @@ public class Ranker  {
 	}
 	////////////////////////////////////////////////////////
 	////////calculation of popularity///////////////////////
-	public static void pageRank() throws SQLException {
+	public static void pageRank() throws SQLException, IOException {
 		DBManager mDB = new DBManager();
 		int count= mDB.getTotPages();
 		mDB.setInitPR(count);
