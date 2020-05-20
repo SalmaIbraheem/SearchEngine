@@ -24,7 +24,7 @@ public class CrawlerMain {
 	private static UrlList list;
 	
 	public static void main(String[] args) throws IOException, SQLException {
-
+		
 		DBManager mDB = new DBManager();
 		crawlerConfig = new Config();
 		list = new UrlList(mDB);
@@ -39,7 +39,7 @@ public class CrawlerMain {
 				"    email varchar(50)\n" + 
 				");";
 		mDB.executeQuery(query);*/
-		////////////////////////////////////////////////////////////////////////	
+		///////////////////////////////////////////////////////////////s/////////	
 		/*String USER_AGENT = "WhateverBot";
 		String url = "http://www.mit.edu/";
 		URL urlObj = new URL(url);
@@ -62,8 +62,16 @@ public class CrawlerMain {
 		for(Element link: questions){
 			//System.out.println(link.attr("abs:href"));
 		}*/
-	
-
+		/*
+		Document doc = Jsoup.connect("http://www.mit.edu/").get();
+		String text = doc.body().text();
+		text = "???????????????????????????????????????????????????????????????????????????????????????????????????????????????©2020GoogleLLCMassach";
+		text = text.replaceAll("\\s+","");
+		text = text.replaceAll("'","");
+		text = text.replaceAll("\\?","");
+		text = text.replaceAll("\\?","");
+		System.out.println(text);
+	*/
 	}
 
 }
