@@ -23,13 +23,18 @@ public class CrawlerMain {
 	private static Config crawlerConfig;
 	private static UrlList list;
 	
-	public static void main(String[] args) throws IOException, SQLException {
-		
+	public static void main(String[] args) throws IOException, SQLException, InterruptedException {
+
 		DBManager mDB = new DBManager();
-		crawlerConfig = new Config();
-		list = new UrlList(mDB);
-		for(int i = 0; i < crawlerConfig.getNumOfThreads(); i++) {
-			new Thread(new WebCrawler(list, mDB,i)).start();
+		int k = 0;
+		while (true) {
+			crawlerConfig = new Config();
+			list = new UrlList(mDB,k);
+			for(int i = 0; i < crawlerConfig.getNumOfThreads(); i++) {
+				new Thread(new WebCrawler(list, mDB,i,crawlerConfig.getNumOfThreads())).start();
+			}
+			k++;
+			Thread.sleep(20*60*1000);
 		}
 		/*JDataBase mDB = new JDataBase();
 		String query = "CREATE TABLE userid(\n" + 
@@ -72,6 +77,10 @@ public class CrawlerMain {
 		text = text.replaceAll("\\?","");
 		System.out.println(text);
 	*/
+		/*String url = "http://calendar.mit.edu/browse/places";
+		URL web = new URL(url);
+		System.out.println(web.getHost());*/
+		
 	}
 
 }

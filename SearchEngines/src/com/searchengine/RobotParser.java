@@ -16,18 +16,19 @@ public class RobotParser {
 	private ArrayList<String> mDissallowed;
 	private String mParent;
 	
-	public RobotParser(String mParent) {
+	public RobotParser(String mParent) throws MalformedURLException {
 		mDissallowed = new ArrayList<String>();
-		this.mParent = mParent;
+		URL web = new URL(mParent);
+		this.mParent = web.getHost();
 		findDisallowed();
 	}
 
 	private void findDisallowed() {
 		int user = 0;
 		String pages;
-		System.out.println(this.mParent+"robots.txt");
+		System.out.println("https://"+this.mParent+"/robots.txt");
 		try{BufferedReader in = new BufferedReader(
-	            new InputStreamReader(new URL(this.mParent+"robots.txt").openStream())); 
+	            new InputStreamReader(new URL("https://"+this.mParent+"/robots.txt").openStream())); 
 	        String line = null;
 	        while((line = in.readLine()) != null) {
 	        	//some robots.txt url doesn't work and shows html

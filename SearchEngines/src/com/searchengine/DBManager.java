@@ -21,8 +21,8 @@ public class DBManager {
 	
 	private JDataBase mDB;
 	private Tf_idf rank;
-	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
-	private static final int mNumberOfSeeds = 2;
+	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","http://www.mit.edu/","https://www.youtube.com/","https://dmoz-odp.org/","https://www.imdb.com/"};
+	private static final int mNumberOfSeeds = 5;
 	private boolean interrupt = false;
 	private String insertQuery = "";
 	  
@@ -35,6 +35,8 @@ public class DBManager {
 				"CREATE TABLE websites( id int not null IDENTITY(1,1) , \r\n" + 
 				"						URL varchar(3000) not null,\r\n" + 
 				"						crawled int DEFAULT 0,\r\n" + 
+				"						interupt int DEFAULT 0,\r\n" + 
+				"						recrawl int DEFAULT 5,\r\n" + 
 				"						content varchar(max) not null,\r\n" + 
 				"						size int DEFAULT 0,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
@@ -69,12 +71,9 @@ public class DBManager {
 		mDB.executeQuery(queryString);
 
 		//make sure database if empty to insert seeds (in case of interrupt)
-		ArrayList<String> table = getUrls();
+		ArrayList<String> table = getUrls(0);
 		if(table.size() == 0) {
 			insertSeeds();
-		}else {
-			//come back from interruption
-			this.interrupt = true;
 		}
 	}
 	private void insertSeeds() throws IOException {
@@ -88,15 +87,15 @@ public class DBManager {
 			//System.out.println(text);
 			mDB.executeQuery("IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+mSeeds[i]+"'))\r\n" + 
 					"BEGIN\r\n" + 
-					"INSERT INTO websites (\"URL\",\"childern\",\"content\")VALUES ('"+mSeeds[i]+"',"+doc.select("a[href]").size()+",'"+text+"');" + 
+					"INSERT INTO websites (\"URL\",\"childern\",\"content\",\"recrawl\")VALUES ('"+mSeeds[i]+"',"+doc.select("a[href]").size()+",'"+text+"', 10);" + 
 					"END;");
 		}
 	}
 
-	public ArrayList<String> getUrls() throws SQLException {
+	public ArrayList<String> getUrls(int iteration) throws SQLException {
 		ArrayList<String> urlsList = new ArrayList<String>();
 		
-		String query = "SELECT * FROM websites WHERE (crawled = 0) ORDER BY childern DESC;";
+		String query = "SELECT * FROM websites WHERE ((crawled = 0 or (interupt = 0 and crawled = 1)) and "+iteration+"%recrawl = 0) ORDER BY childern DESC;";
 		ResultSet urls = mDB.getResult(query);
 		//to concatenate query and execute them all
 		String update_query = "";
@@ -111,39 +110,44 @@ public class DBManager {
 		return interrupt;
 	}
 	
-	public void addLink(String parent, String link,int hyberLinksSize,String content) throws IOException, SQLException {
+	public void addLink(String parent, String link,int hyberLinksSize,String content,int recrawl){
 		//get permission from robots.txt
 		if(content.length() > 7000) content = content.substring(0,7000);
 		//System.out.println(content);
-		
-		//check if it's already in database
-		this.insertQuery ="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"'))\r\n" + 
-				"BEGIN\r\n" + 
-				"	INSERT INTO websites (\"URL\",\"size\",\"childern\",\"content\")VALUES ('"+link+"',"+link.length()+","+hyberLinksSize+",'"+content+"');\r\n" ;
-		//add to the relation between urls 
-		this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
-				"BEGIN \r\n" + 
-				"	INSERT INTO Pointers (url1_id,url2_id) Values('"+parent+"','"+link+"');\r\n" + 
-				"END;\r\n"+ 
-				"END;\r\n";;
-		mDB.executeQuery(this.insertQuery);
+		if(content.length() > 50) {
+			//check if it's already in database
+			this.insertQuery ="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"' and content LIKE '%"+content+"%'))\r\n" + 
+					"BEGIN\r\n" + 
+					"	INSERT INTO websites (\"URL\",\"size\",\"childern\",\"content\",\"recrawl\")VALUES ('"+link+"',"+link.length()+","+hyberLinksSize+",'"+content+"',"+recrawl+");\r\n" +
+					"END;\r\n";
+			//add to the relation between urls 
+			this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
+					"BEGIN \r\n" + 
+					"	INSERT INTO Pointers (url1_id,url2_id) Values('"+parent+"','"+link+"');\r\n" + 
+					"END;\r\n";
+			mDB.executeQuery(this.insertQuery);
+		}
 	}
 
- 
-    public static boolean isValid(String url) 
-    { 
-        /* Try creating a valid URL */
-        try { 
-            new URL(url).toURI(); 
-            return true; 
-        } 
-          
-        // If there was an Exception 
-        // while creating URL object 
-        catch (Exception e) { 
-            return false; 
-        } 
-    }
+	public void updatewebsite(String page) {
+		// TODO Auto-generated method stub
+		String query = "UPDATE websites SET interupt=1 WHERE (URL = '"+page+"');";
+		mDB.executeQuery(query);
+	}
+	public int getBeforeInt() throws SQLException{
+		String query = "select count (*) as size from websites;";
+		ResultSet set =  mDB.getResult(query);
+		if(set.next()) {
+			try {
+				return set.getInt("size");
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return 0;
+			} 
+		}
+		return 0;
+	}
     
     ///////////////////////////////ranking//////////////////////////////////
     public void getWords() throws SQLException {
@@ -184,5 +188,6 @@ public class DBManager {
 		mDB.executeQuery(update_query);
 		
 	}
+
 }
 	  
