@@ -26,7 +26,7 @@ public class DBManager {
 	
 	private JDataBase mDB;
 
-	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","https://dmoz-odp.org/","https://www.imdb.com/","https://medium.com./"};
+	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","https://dmoz-odp.org/","https://www.imdb.com/","https://medium.com/"};
 
 	private static final int mNumberOfSeeds = 5;
 	private boolean interrupt = false;
