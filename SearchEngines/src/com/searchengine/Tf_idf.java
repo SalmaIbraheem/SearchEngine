@@ -23,7 +23,7 @@ public class Tf_idf {
 	public static void main(String[] args) throws IOException, SQLException {
 
 		DBManager mDB = new DBManager();
-		mDB.getWords();
+		mDB.getWordsOfPages();
 	
 	}
 }

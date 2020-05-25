@@ -8,6 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,12 +19,14 @@ import org.jsoup.select.Elements;
 
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
+import opennlp.tools.stemmer.PorterStemmer;
+
 public class DBManager {
 
 	
 	private JDataBase mDB;
 	private Tf_idf rank;
-	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","http://www.mit.edu/","https://www.youtube.com/","https://dmoz-odp.org/","https://www.imdb.com/"};
+	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","https://dmoz-odp.org/","https://www.imdb.com/","https://medium.com./"};
 	private static final int mNumberOfSeeds = 5;
 	private boolean interrupt = false;
 	private String insertQuery = "";
@@ -38,8 +43,9 @@ public class DBManager {
 				"						interupt int DEFAULT 0,\r\n" + 
 				"						recrawl int DEFAULT 5,\r\n" + 
 				"						content varchar(max) not null,\r\n" + 
-				"						size int DEFAULT 0,\r\n" + 
+				"						size int DEFAULT 1,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
+				"						PR float DEFAULT 0,\r\n" + 
 				"						primary key (URL)); \r\n" + 
 				"end;\r\n";
 		
@@ -150,44 +156,150 @@ public class DBManager {
 	}
     
     ///////////////////////////////ranking//////////////////////////////////
-    public void getWords() throws SQLException {
-		rank = new Tf_idf();
-		
-		String query = "select *\r\n" + 
-				"	from websites join words_websites\r\n" + 
-				"	on websites.URL = words_websites.URL;";
-		
-		ResultSet words = mDB.getResult(query);
-		query ="select count (*) from websites;";
+    
+    
+   
+    public void setInitPR(float n)throws SQLException {
+    	String query="update websites  set PR="+ 1.0/n+";";
+    	mDB.executeQuery(query);
+    }
+    
+    public ResultSet pagesUrl()throws SQLException{
+    	String query="select URL,PR from websites;";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    
+    public ResultSet getLinkedPages(String page)throws SQLException{
+    	String query="Select url1_id,childern,PR FROM Pointers T1  JOIN websites T2 ON T1.url1_id = T2.URL where (T1.url2_id = '"+page+"');";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    public ResultSet getPR()throws SQLException{
+    	String query="with temp as (select (PR/childern) as x ,URL,url2_id\n" + 
+    			"FROM Pointers T1  JOIN websites T2 ON T1.url1_id = T2.URL\n" + 
+    			" )\n" + 
+    			"select sum(x) as r,url2_id from temp group by url2_id;";
+    	ResultSet c= mDB.getResult(query);
+    	return c;
+    }
+    
+    public void setPR(HashMap<String, Float> ranks)throws SQLException {
+    	String query= "";
+    	for (Entry<String, Float> entry : ranks.entrySet()) {
+		   
+		    query+="update websites set PR="+entry.getValue()+" where URL= '"+entry.getKey()+"';\r\n";
+		    
+		}
+    
+    	mDB.executeQuery(query);
+    }
+    
+    ////////////////////////////////////////////Relvence Ranking///////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    public ResultSet getWordsOfPages() {
+    	String query = "select total_occur,size,websites.URL,word_id,\n" + 
+    			"count(*)over (partition by word_id) as c\n" + 
+    			" from websites join words_websites \n" + 
+    			" on websites.URL = words_websites.URL ;\n" ;
+    	
+    	ResultSet words = mDB.getResult(query);
+    	return words;
+    }
+    
+    public int getTotPages()throws SQLException {
+    	
+    	String query ="select count (*) from websites;";
 		ResultSet c= mDB.getResult(query);
 		int totDoc=0;
 		while(c.next())
 		{
 			 totDoc =  Integer.parseInt(c.getString(""));
 		}
+		return totDoc;
 		
-		//to concatenate query and execute them all
-		String update_query = "";
-		int occur=0;
-		int totWord = 0,docOccur = 0;
-		double score;
-		
-		while (words.next()) {
-			occur = Integer.parseInt(words.getString("total_occur"));
-			totWord= Integer.parseInt(words.getString("size"));
-			query= "select count(*) from words_websites where word_id="+ words.getString("word_id")+";";
-			c = mDB.getResult(query);			
-			while(c.next())
-			{
-				 docOccur =  Integer.parseInt(c.getString(""));
-			}
-			score = rank.tfIdf(occur, totWord, totDoc, docOccur);
-			System.out.println(score);
-			update_query += "UPDATE words_websites SET score="+ score +"WHERE (URL = '"+words.getString("URL")+"' and word_id = "+words.getString("word_id")+");\r\n";
+    	
+    }
+    
+    public void setTf(ArrayList<String>url,ArrayList<String>wordId,ArrayList<Float>rank)throws SQLException {
+    	String query= "";
+    	for (int i=0;i<url.size();i++) {
+		   
+    		query += "UPDATE words_websites SET score="+ rank.get(i) +"WHERE (URL = '"+url.get(i)+"' and word_id = "+wordId.get(i)+");\r\n";
+		    
 		}
-		mDB.executeQuery(update_query);
-		
-	}
+    
+    	mDB.executeQuery(query);
+    } 
+    
+    
+
+		    
+//////////////indexer functions /////////////////////
+    void insert_words_count(String url,int count)
+    {
+    	String query = "UPDATE websites SET size = "+count+" WHERE URL = \'"+url+"\'";
+    	System.out.println(count);
+    	System.out.println(query);
+    	mDB.executeQuery(query);
+    }
+    void insert_words(ArrayList<String> words , String url) throws SQLException
+    {
+    	for(String s :words)
+		{
+			//System.out.println(s);
+    		//check if word exists in words table
+			String query = "select id from words where word = \'"+s+"\';";
+			//System.out.println(query);
+			ResultSet rs = mDB.getResult(query);
+			
+			if(rs.next()) //word already inserted in words table
+			{
+				//System.out.println(rs.getInt(1));
+				insert_word_website(rs.getInt(1), url);
+			}
+			else {
+				//stem word
+				PorterStemmer porter = new PorterStemmer();
+				String stem = porter.stem(s);
+				query = "INSERT INTO words (stem,word) values (\'"+stem+"\',\'"+s+"\')";
+				//System.out.println(query);
+				mDB.executeQuery(query);
+				//get id of the inserted
+				query = "select id from words where word = \'"+s+"\';";
+				rs = mDB.getResult(query);
+				if(rs.next())
+				{
+					insert_word_website(rs.getInt(1), url);
+				}
+			}
+		}
+    }
+    void insert_word_website(int id,String url) throws SQLException
+    {
+    	String query = "select total_occur from words_websites where word_id = "+Integer.toString(id)+" AND URL = \'"+url+"\'";
+    	ResultSet rs = mDB.getResult(query);
+    	if(rs.next())
+    	{
+    		
+    		query = "update words_websites set total_occur = " +Integer.toString(rs.getInt(1)+1)+" where word_id = "+Integer.toString(id)+" AND URL = \'"+url+"\'";
+    		//System.out.println(query);
+    		mDB.executeQuery(query);
+    	}
+    	else
+    	{
+    		query = "insert into words_websites (word_id,URL) values (\'"+Integer.toString(id)+"\',\'"+url+"\') ;";
+    		//System.out.println(query);
+    		mDB.executeQuery(query);
+    	}
+    	
+    	
+    }
+//////////////indexer functions /////////////////////
+
+    
+    
 
 }
 	  

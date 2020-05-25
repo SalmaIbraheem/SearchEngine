@@ -4,5 +4,6 @@
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_251"/>
 	<classpathentry exported="true" kind="lib" path="src/com/searchengine/sqljdbc41.jar"/>
 	<classpathentry exported="true" kind="lib" path="src/com/searchengine/jsoup-1.13.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="opennlp-tools-1.8.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
