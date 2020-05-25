@@ -13,7 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 public class Indexer {
-	public static void index(String url) throws IOException, SQLException
+	public static void index(String url,List<String>stopwords) throws IOException, SQLException
 	{
 		DBManager d = new DBManager();
 		Document doc = Jsoup.connect(url).get();
@@ -21,9 +21,9 @@ public class Indexer {
 		//System.out.println(data);
 		
 		//split words and remove stop words
-		List<String>stopwords = Files.readAllLines(Paths.get("stop_words.txt"));
+		
 		String REGEX = "\\s+|\\s*\\,\\s*|\\s*\\.\\s*|\\s*\\&\\s*|\\s*\\$\\s*|\\s*\\;\\s*|\\s*\\:\\s*|\\s*\\(\\s*|\\s*\\)\\s*"+
-		"|\\%|\\^|\\*|\\!\\?|\\>|\\<|\\=|\\+|\\-|\\Â±|\\\\|\\\"|\\[|\\]|\\{|\\}|\\/|\\'"; 
+		"|\\%|\\^|\\*|\\!\\?|\\>|\\<|\\=|\\+|\\-|\\±|\\\\|\\\"|\\[|\\]|\\{|\\}|\\/|\\'"; 
 		ArrayList<String> allWords = 
 			      Stream.of(data.toLowerCase().split(REGEX))
 			            .collect(Collectors.toCollection(ArrayList<String>::new));
@@ -40,14 +40,26 @@ public class Indexer {
 	}
 
 	public static void main(String[] args) throws IOException, SQLException {
-		String u = "http://calendar.mit.edu/";
-		index(u);
-		/*DBManager d = new DBManager();
-		ArrayList<String>w = new ArrayList<String>();
-		w.add("play");
-		w.add("home");
-		w.add("play");
-		d.insert_words(w, u);*/
+		
+		//read stop words 
+		List<String>stopwords = Files.readAllLines(Paths.get("stop_words.txt"));
+		
+		//String u = "http://calendar.mit.edu/";
+		//index(u,stopwords);
+		ArrayList<String> test = new ArrayList();
+		test.add("http://calendar.mit.edu/");
+		test.add("http://www.facebook.com/dmoz");
+		test.add("https://twitter.com/mit");
+		test.add("https://www.instagram.com/mitpics/");
+		test.add("https://www.youtube.com/yt/about/ar/");
+		test.add("https://www.techmeme.com/sponsor");
+		test.add("http://news.mit.edu/");
+		test.add("http://careers.mit.edu/");
+		
+		for(String s :test)
+		{
+			index(s, stopwords);
+		}
 		
 	}
 }

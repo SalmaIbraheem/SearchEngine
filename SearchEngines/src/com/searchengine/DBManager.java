@@ -19,12 +19,14 @@ import org.jsoup.select.Elements;
 
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
+import opennlp.tools.stemmer.PorterStemmer;
+
 public class DBManager {
 
 	
 	private JDataBase mDB;
-	private static final String[] mSeeds = {"http://www.mit.edu/","http://www.mit.edu/#main"};
-	private static final int mNumberOfSeeds = 2;
+	private static final String[] mSeeds = {"https://www.techmeme.com/","https://www.wikipedia.org/","http://www.mit.edu/","https://www.youtube.com/","https://dmoz-odp.org/"};
+	private static final int mNumberOfSeeds = 5;
 	private boolean interrupt = false;
 	private String insertQuery = "";
 	  
@@ -62,8 +64,8 @@ public class DBManager {
 		//words_websites table
 		queryString += "if(object_id('words_websites','U') is null)\r\n"+
 		"begin\r\n"+
-		"create table words_websites (word_id int not null,URL varchar(3000) not null,score int DEFAULT 0,"+
-		"total_occur int DEFAULT 0,first_position int DEFAULT 0 "+
+		"create table words_websites (word_id int not null,URL varchar(3000) not null,score float DEFAULT 0,"+
+		"total_occur int DEFAULT 1,first_position int DEFAULT 0 "+
 		",FOREIGN KEY (word_id) REFERENCES words(id) "+
 		" ,FOREIGN KEY (URL) REFERENCES websites(URL)"+
 		", CONSTRAINT p_key PRIMARY KEY(word_id,URL))\r\n"+
@@ -179,9 +181,18 @@ public class DBManager {
     
     public void setPR(HashMap<String, Float> ranks)throws SQLException {
     	String query= "";
+    	int i=0;
+    	int j=1;
     	for (Entry<String, Float> entry : ranks.entrySet()) {
 		   
 		    query+="update websites set PR="+entry.getValue()+" where URL= '"+entry.getKey()+"';\r\n";
+		    if(i== j*600 )
+		    {
+		    	mDB.executeQuery(query);
+		    	query="";
+		    	j++;
+		    }
+		    i++;	
 		    
 		}
     
@@ -217,13 +228,24 @@ public class DBManager {
     
     public void setTf(ArrayList<String>url,ArrayList<String>wordId,ArrayList<Float>rank)throws SQLException {
     	String query= "";
+    	//String tempQ="";
+        int j=1;
     	for (int i=0;i<url.size();i++) {
 		   
-    		query += "UPDATE words_websites SET score="+ rank.get(i) +"WHERE (URL = '"+url.get(i)+"' and word_id = "+wordId.get(i)+");\r\n";
-		    
+		    query += "UPDATE words_websites SET score="+ rank.get(i) +" WHERE (URL = '"+url.get(i)+"' and word_id = "+Integer.parseInt(wordId.get(i))+");\r\n";
+    		//System.out.println(query);
+		    if(i== j*600 )
+		    {
+		    	mDB.executeQuery(query);
+		    	query="";
+		    	j++;
+		    }
+		    	
+		  
 		}
-    
+        //System.out.println(query);
     	mDB.executeQuery(query);
+    	
     } 
     
     

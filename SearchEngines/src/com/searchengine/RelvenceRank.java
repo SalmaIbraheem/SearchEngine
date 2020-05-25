@@ -35,15 +35,19 @@ public class RelvenceRank {
 		int totWord = 0,docOccur = 0;
 		
 		float score;
+		int i=0;
 		while (words.next()) {
+			//System.out.println(i);
 			occur = Integer.parseInt(words.getString("total_occur"));//number of occurnces of word in page
 			totWord= Integer.parseInt(words.getString("size"));//number of total words in page
 			docOccur= Integer.parseInt(words.getString("c"));//number of pages that have this word
 			score = tfIdf(occur, totWord, totalDoc, docOccur);
+			//System.out.println(words.getString("word_id"));
+			
 			url.add(words.getString("URL"));
 			wordId.add(words.getString("word_id"));
 			ranks.add(score);
-			
+			i++;
 		}
 		mDB.setTf(url, wordId, ranks);
 		
@@ -55,6 +59,8 @@ public class RelvenceRank {
 	
 	public double tf(int occ,int tot){
 		double o=occ;
+		if (tot == 0)
+			return .1;
 		return o/tot;
 		
 	}
