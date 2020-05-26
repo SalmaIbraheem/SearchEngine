@@ -45,14 +45,14 @@ public class Indexer implements Runnable {
 			      Stream.of(data.toLowerCase().split(REGEX))
 			            .collect(Collectors.toCollection(ArrayList<String>::new));
 		//add total words count of the url
-		d.insert_words_count(url, allWords.size());
-		
+		//d.insert_words_count(url, allWords.size());
+		int count = allWords.size();
 		//remove stopwords
 		allWords.removeAll(stopwords);
 		allWords.removeIf(s->(s.isEmpty()||s.matches("\\d+")));
 		
 		//insert all words to database
-		d.insert_words(allWords, url);
+		d.insert_words(allWords, url,count);
 		/*for(String s :allWords)
 		{
 			System.out.println(s);

@@ -31,7 +31,7 @@ public class DBManager {
 	private static final int mNumberOfSeeds = 5;
 	private boolean interrupt = false;
 	private String insertQuery = "";
-	  
+	PorterStemmer porter = new PorterStemmer();  
 	  
 	public DBManager() throws SQLException, IOException {
 		mDB = new JDataBase();
@@ -137,7 +137,7 @@ public class DBManager {
 			//check if it's already in database
 			this.insertQuery ="IF NOT EXISTS (Select* FROM websites WHERE (URL = '"+link+"' and content LIKE '%"+content+"%'))\r\n" + 
 					"BEGIN\r\n" + 
-					"	INSERT INTO websites (\"URL\",\"size\",\"childern\",\"content\",\"recrawl\")VALUES ('"+link+"',"+link.length()+","+hyberLinksSize+",'"+content+"',"+recrawl+");\r\n" +
+					"	INSERT INTO websites (\"URL\",\"childern\",\"content\",\"recrawl\")VALUES ('"+link+"',"+hyberLinksSize+",'"+content+"',"+recrawl+");\r\n" +
 					"END;\r\n";
 			//add to the relation between urls 
 			this.insertQuery += "IF NOT EXISTS (Select* FROM Pointers WHERE (url1_id = '"+parent+"' AND url2_id = '"+link+"')) \r\n" + 
@@ -277,9 +277,32 @@ public class DBManager {
     	//System.out.println(query);
     	mDB.executeQuery(query);
     }
-    void insert_words(ArrayList<String> words , String url) throws SQLException
+    void insert_words(ArrayList<String> words , String url,int count) throws SQLException
     {
+    	String concatenated_query="UPDATE websites SET size = "+count+" WHERE URL = \'"+url+"\';\r\n";
+    	String id_query ="";
+    	String temp ="";
     	for(String s :words)
+    	{
+    		
+			String stem = porter.stem(s);
+    		temp = "select id from words where word = \'"+s+"\'";
+    		//insert in words table
+    		concatenated_query+="if not exists ( "+temp+") begin insert into words (stem,word)"
+    				+ " values (\'"+stem+"\',\'"+s+"\') end;\r\n";
+    		//insert in words_websites
+    		id_query = "(select id from words where word = \'"+s+"\')";
+    		temp = "select total_occur from words_websites where word_id = ("+id_query+") AND URL = \'"+url+"\'";
+    		concatenated_query+="if not exists ("+temp+")"
+    				+ " begin insert into words_websites (word_id,URL) values ("+id_query+",\'"+url+"\') "
+    						+ "end else begin "
+    						+  "update words_websites set total_occur = (" +temp+"+1) where word_id = ("+id_query+") AND URL = \'"+url+"\' end\r\n";
+    		
+    		
+    	}
+    	
+    	mDB.executeQuery(concatenated_query);
+    	/*for(String s :words)
 		{
 			//System.out.println(s);
     		//check if word exists in words table
@@ -307,7 +330,7 @@ public class DBManager {
 					insert_word_website(rs.getInt(1), url);
 				}
 			}
-		}
+		}*/
     }
     void insert_word_website(int id,String url) throws SQLException
     {
