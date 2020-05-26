@@ -12,26 +12,46 @@ import java.util.stream.Stream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-public class Indexer {
-	public static void index(String url) throws IOException, SQLException
+public class Indexer implements Runnable {
+	private  String url="";
+	List<String>stopwords;
+	UrlList list;
+	public Indexer (UrlList u,List<String>s)
 	{
+		this.list = u;
+		this.stopwords = s;
+	}
+	
+	public  void index(String url) throws IOException, SQLException
+	{
+		//System.out.println(url);
+		if(url==null)
+			return;
+		if(url.isBlank())
+			return;
 		DBManager d = new DBManager();
+		//parse html document
+		System.out.println(url);
 		Document doc = Jsoup.connect(url).get();
-		String data = doc.body().text();
-		//System.out.println(data);
+		//contains body of the document
+		String data = doc.body().text(); 
+		
 		
 		//split words and remove stop words
-		List<String>stopwords = Files.readAllLines(Paths.get("stop_words.txt"));
+		
 		String REGEX = "\\s+|\\s*\\,\\s*|\\s*\\.\\s*|\\s*\\&\\s*|\\s*\\$\\s*|\\s*\\;\\s*|\\s*\\:\\s*|\\s*\\(\\s*|\\s*\\)\\s*"+
 		"|\\%|\\^|\\*|\\!\\?|\\>|\\<|\\=|\\+|\\-|\\±|\\\\|\\\"|\\[|\\]|\\{|\\}|\\/|\\'"; 
 		ArrayList<String> allWords = 
 			      Stream.of(data.toLowerCase().split(REGEX))
 			            .collect(Collectors.toCollection(ArrayList<String>::new));
+		//add total words count of the url
 		d.insert_words_count(url, allWords.size());
 		
+		//remove stopwords
 		allWords.removeAll(stopwords);
 		allWords.removeIf(s->(s.isEmpty()||s.matches("\\d+")));
 		
+		//insert all words to database
 		d.insert_words(allWords, url);
 		/*for(String s :allWords)
 		{
@@ -39,15 +59,19 @@ public class Indexer {
 		}*/
 	}
 
-	public static void main(String[] args) throws IOException, SQLException {
-		String u = "http://calendar.mit.edu/";
-		index(u);
-		/*DBManager d = new DBManager();
-		ArrayList<String>w = new ArrayList<String>();
-		w.add("play");
-		w.add("home");
-		w.add("play");
-		d.insert_words(w, u);*/
+	
+	@Override
+	public void run() {
 		
+		try {
+			while(!list.get_stopping_criteria())
+				index(list.getNewUrl());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

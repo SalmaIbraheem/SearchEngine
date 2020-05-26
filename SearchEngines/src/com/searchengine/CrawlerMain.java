@@ -27,7 +27,7 @@ public class CrawlerMain {
 		
 		DBManager mDB = new DBManager();
 		crawlerConfig = new Config();
-		list = new UrlList(mDB);
+		list = new UrlList(mDB,0);
 		for(int i = 0; i < crawlerConfig.getNumOfThreads(); i++) {
 			new Thread(new WebCrawler(list, mDB,i)).start();
 		}

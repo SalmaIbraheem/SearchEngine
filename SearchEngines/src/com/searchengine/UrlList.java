@@ -9,11 +9,15 @@ public class UrlList {
 	private int lastPosition;
 	public DBManager dbMan;
 	private int crawledLinks = 0;
-	
-	public UrlList(DBManager dbMan) throws SQLException {
+	private int type;
+	private boolean stop;
+	public UrlList(DBManager dbMan,int t) throws SQLException {
 		this.dbMan = dbMan;
 		this.lastPosition = -1;
-		urls = dbMan.getUrls();
+		this.type = t;
+		urls = dbMan.getUrls(t);
+		stop = false;
+		System.out.println("constructor\n");
 	}
 	
 	public String getNewUrl() throws SQLException{
@@ -45,10 +49,12 @@ public class UrlList {
 	public synchronized Boolean Update() throws SQLException{
 		lastPosition = 0;
 		//we take all urls in the list retrieve from database
-		urls = dbMan.getUrls();
+		urls = dbMan.getUrls(this.type);
 		if(urls.size() == 0) {
+			stop = true;
 			return false;
 		}
+		stop = false;
 		return true;
 	}
 
@@ -59,6 +65,11 @@ public class UrlList {
 	public synchronized void setCrawledLinks(int crawledLinks) {
 		this.crawledLinks = crawledLinks;
 		System.out.println(crawledLinks);
+	}
+	
+	boolean get_stopping_criteria()
+	{
+		return stop;
 	}
 	
 }

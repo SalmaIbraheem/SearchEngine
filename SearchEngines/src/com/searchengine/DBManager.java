@@ -19,6 +19,8 @@ import org.jsoup.select.Elements;
 
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
+import opennlp.tools.stemmer.PorterStemmer;
+
 public class DBManager {
 
 	
@@ -38,9 +40,10 @@ public class DBManager {
 				"						URL varchar(3000) not null,\r\n" + 
 				"						crawled int DEFAULT 0,\r\n" + 
 				"						content varchar(max) not null,\r\n" + 
-				"						size int DEFAULT 1,\r\n" + 
+				"						size int DEFAULT 0,\r\n" + 
 				"						childern int DEFAULT 0,\r\n" + 
 				"						PR float DEFAULT 0,\r\n" + 
+				"						indexed int DEFAULT 0,\r\n"+
 				"						primary key (URL)); \r\n" + 
 				"end;\r\n";
 		
@@ -63,7 +66,7 @@ public class DBManager {
 		queryString += "if(object_id('words_websites','U') is null)\r\n"+
 		"begin\r\n"+
 		"create table words_websites (word_id int not null,URL varchar(3000) not null,score int DEFAULT 0,"+
-		"total_occur int DEFAULT 0,first_position int DEFAULT 0 "+
+		"total_occur int DEFAULT 1,first_position int DEFAULT 0 "+
 		",FOREIGN KEY (word_id) REFERENCES words(id) "+
 		" ,FOREIGN KEY (URL) REFERENCES websites(URL)"+
 		", CONSTRAINT p_key PRIMARY KEY(word_id,URL))\r\n"+
@@ -72,7 +75,7 @@ public class DBManager {
 		mDB.executeQuery(queryString);
 
 		//make sure database if empty to insert seeds (in case of interrupt)
-		ArrayList<String> table = getUrls();
+		ArrayList<String> table = getUrls(0);
 		if(table.size() == 0) {
 			insertSeeds();
 		}else {
@@ -96,16 +99,20 @@ public class DBManager {
 		}
 	}
 
-	public ArrayList<String> getUrls() throws SQLException {
+	public ArrayList<String> getUrls(int type) throws SQLException {
 		ArrayList<String> urlsList = new ArrayList<String>();
-		
-		String query = "SELECT * FROM websites WHERE (crawled = 0) ORDER BY childern DESC;";
+		String column = "";
+		if(type == 0)//crawler
+			column = "crawled";
+		else 
+			column = "indexed";
+		String query = "SELECT * FROM websites WHERE ("+column+" = 0) ORDER BY childern DESC;";
 		ResultSet urls = mDB.getResult(query);
 		//to concatenate query and execute them all
 		String update_query = "";
 		while (urls.next()) {
 			urlsList.add(urls.getString("URL"));
-			update_query += "UPDATE websites SET crawled=1 WHERE (URL = '"+urls.getString("URL")+"');\r\n";
+			update_query += "UPDATE websites SET "+column+"=1 WHERE (URL = '"+urls.getString("URL")+"');\r\n";
 		}
 		mDB.executeQuery(update_query);
 		return urlsList;
