@@ -14,7 +14,7 @@ public class IndexerMain {
 		//read stopwords file
 		List<String>stopwords = Files.readAllLines(Paths.get("stop_words.txt"));
 		DBManager mDB = new DBManager();
-		list = new UrlList(mDB,1);
+		list = new UrlList(mDB,0,1);
 		int num_indexers = 5;
 		ArrayList <Thread> threads = new ArrayList<Thread>();
 		//while(true)

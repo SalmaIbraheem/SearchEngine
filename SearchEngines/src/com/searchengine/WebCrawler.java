@@ -26,27 +26,28 @@ public class WebCrawler implements Runnable  {
 	private UrlList list;
 	private DBManager mDB;
 	private int mID;
+	private int numberThreads;
 	
-	public WebCrawler(UrlList list,DBManager mDB,int mID) {
+	public WebCrawler(UrlList list,DBManager mDB,int mID, int numberThreads) {
 		this.list = list;
 		this.mDB = mDB;
 		this.mID = mID;
+		this.numberThreads = numberThreads;
 	}
 	@Override
 	public void run() {
 		System.out.println("Thread "+mID+" start working");
-		for(int i = 0; i< 500;i++) {
-			String page;
+		for(int i = 0; i< 5000/numberThreads;i++) {
+			String page = "";
 			try {
 				page = list.getNewUrl();
-				//System.out.println(page);
+				System.out.println(page);
 				if(!crawlHyberlinks(page)) {
 					return;
 				}
+				mDB.updatewebsite(page);
 				System.out.println("Thread "+mID+" crawling page "+page);
 			} catch (SQLException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 			//links has no permissions to be showed	
 		}
@@ -72,11 +73,12 @@ public class WebCrawler implements Runnable  {
 								doc.documentType().name().equals("html")) {
 	
 								String text = doc.body().text();
+								System.out.println(text);
 								text = text.replaceAll("\\s+","");
 								text = text.replaceAll("'","");
 								text = text.replaceAll("\\?", "");
-							
-								mDB.addLink(page,link.attr("abs:href"),Jsoup.connect(link.attr("abs:href")).get().select("a[href]").size(),text);
+								int recrawl = getRecrawl(page,text);
+								mDB.addLink(page,link.attr("abs:href"),Jsoup.connect(link.attr("abs:href")).get().select("a[href]").size(),text,recrawl);
 								//Increasing number of pages in database and stop when its 50000
 								list.setCrawledLinks(list.getCrawledLinks()+1);
 								
@@ -94,6 +96,17 @@ public class WebCrawler implements Runnable  {
 			
 		}
 		return true;
+	}
+	private int getRecrawl(String page, String text) {
+		page = page.toLowerCase();
+		if(page.contains("news") || page.contains("covid")) {
+			return 1;
+		}if(page.contains("shop")) {
+			return 2;
+		}if(page.contains("movie") || page.contains("music") || page.contains("art")  ) {
+			return 3;
+		}
+		return 5;
 	}
 	
 

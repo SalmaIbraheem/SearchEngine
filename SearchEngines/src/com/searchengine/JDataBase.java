@@ -12,7 +12,6 @@ public class JDataBase {
 		try {
 			getConnection().createStatement().executeUpdate(query);
 		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 

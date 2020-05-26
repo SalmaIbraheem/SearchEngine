@@ -20,9 +20,9 @@ public class Ranker  {
 		//String[] strArray1 = new String[] {"liked","man"};
 		//mDB.getSearchResult(strArray1);
 		PopularityRank p = new PopularityRank(mDB);
-		///p.pageRank();
-		RelvenceRank r= new RelvenceRank(mDB);
-		r.rankTf();
+		p.pageRank();
+		//RelvenceRank r= new RelvenceRank(mDB);
+		//r.rankTf();
 		
 	
 	}

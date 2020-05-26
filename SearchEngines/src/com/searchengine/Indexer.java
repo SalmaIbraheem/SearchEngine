@@ -31,7 +31,7 @@ public class Indexer implements Runnable {
 			return;
 		DBManager d = new DBManager();
 		//parse html document
-		System.out.println(url);
+		//System.out.println(url);
 		Document doc = Jsoup.connect(url).get();
 		//contains body of the document
 		String data = doc.body().text(); 
@@ -40,7 +40,7 @@ public class Indexer implements Runnable {
 		//split words and remove stop words
 		
 		String REGEX = "\\s+|\\s*\\,\\s*|\\s*\\.\\s*|\\s*\\&\\s*|\\s*\\$\\s*|\\s*\\;\\s*|\\s*\\:\\s*|\\s*\\(\\s*|\\s*\\)\\s*"+
-		"|\\%|\\^|\\*|\\!\\?|\\>|\\<|\\=|\\+|\\-|\\±|\\\\|\\\"|\\[|\\]|\\{|\\}|\\/|\\'"; 
+		"|\\%|\\^|\\*|\\!\\?|\\>|\\<|\\=|\\+|\\-|\\�|\\\\|\\\"|\\[|\\]|\\{|\\}|\\/|\\'"; 
 		ArrayList<String> allWords = 
 			      Stream.of(data.toLowerCase().split(REGEX))
 			            .collect(Collectors.toCollection(ArrayList<String>::new));
