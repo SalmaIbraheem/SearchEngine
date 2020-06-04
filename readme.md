@@ -1,3 +1,6 @@
+
+                                           Search Engine Project
+					   
 To run the project -> 1- connect to mssql and Create a database called search_engine in mssql
                       2- run the file called CrawlerMain.java to start crawling,indexing and ranking websites
 		      3- In the case that you stop the program before crawler finishes crawling its limit
@@ -6,6 +9,8 @@ To run the project -> 1- connect to mssql and Create a database called search_en
                       4- to run the website 
 				1. run tomcat
 				2. run the main.jsp file on tomcat 
+				
+				
 Dependencies ->  jsoup.jar
 		 servler-api.jar
 		 json-simple.jar
