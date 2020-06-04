@@ -1,0 +1,151 @@
+body {
+  height:100%;	
+  font-family: 'Caveat Brush'; 
+  background-color:#181818;
+  color:#E8E8E8;
+}
+
+/*img {
+	width: 100px;
+	height: 60px;
+}*/
+.container{
+	margin-top: 3%;
+	margin-left: 5%;
+	margin-right:0%;	
+	padding:0;
+}
+.result {
+ 	margin-left: 0%;
+ 	width:60%;
+}
+
+.result a {
+	margin-bottom: 0%;
+}
+p {
+	font-size: 25px;
+}
+a {
+	color:#28CAB9;
+}
+
+a:hover{
+	color:#FF8675;
+}
+.pages {
+	 width: 60%;
+ 	 margin-left: 5%;
+}
+
+form{
+	float:left;
+}
+
+
+.searchBar
+{
+	background-color: #181818;
+	padding-top:1%;
+	padding-left:5%;
+	padding-bottom:2%;
+	position:fixed;
+	width:100%;
+}
+#logo {	
+  float:left;
+  margin-right: 4%;
+  
+}
+/*the container must be positioned relative:*/
+.autocomplete {
+  position: relative;
+  display: inline-block;
+  margin-right:10px;
+  width: 450px;
+}
+#myInput {
+	 border:1px solid #272727;
+	 border-radius: 10px;
+}
+
+.autocomplete input {
+ font-size: 22px;
+ outline:0;
+  border:1px solid #272727;
+  background-color:#272727;
+  height: 40px;
+  width:100%;
+  padding:5px;
+  color:#E8E8E8;
+}
+
+.button {
+  border-radius: 10px;
+  background-color: #272727; 
+  border: 1px solid #272727;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 25px;
+  cursor: pointer;
+  height:40px;
+  color:#E8E8E8;
+}
+.btn-circle {
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 1.428571429;
+  border-radius: 15px;
+ 
+}
+#mic {
+	margin-left:92%;
+    position: absolute;
+    background: transparent;
+    outline: none;
+    border: none;
+    margin-top: 5px;
+    font-size:20px;
+}
+.autocomplete-items {
+  position: absolute;
+  width:100%;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.autocomplete-items input {
+ width:100%;	
+  padding: 10px;
+  cursor: pointer;
+ background-color: #272727;
+ border:2px solid #272727;
+}
+
+#suggest {
+	margin-top:0px;
+	margin-bottom:0px;
+}
+hr {
+	margin-top:5%; background-color:#272727
+}
+/*when hovering an item:*/
+.autocomplete-items input:hover {
+  background-color: #e9e9e9; 
+}
+
+/*when navigating through the items using the arrow keys:*/
+.autocomplete-active {
+  background-color: DodgerBlue !important; 
+}
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration { display: none; }
