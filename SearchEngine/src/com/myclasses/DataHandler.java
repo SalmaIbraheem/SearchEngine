@@ -18,8 +18,6 @@ public class DataHandler {
 	public DataHandler() throws SQLException, IOException
 	{
 		dbM = new DBManager();
-		System.out.println("im db manager");
-		System.out.println(dbM);
 		ArrayList<String> urls = new ArrayList<String>();
 	}
 	
@@ -27,17 +25,13 @@ public class DataHandler {
 	{
 		if(SearchRequest.phraseFlag == true)
 		{
-			System.out.println("phrase db " + SearchRequest.phrase);
-			System.out.println("phrase db " + SearchRequest.queryWords);
-			urls = dbM.getPharseSearch(SearchRequest.phrase, SearchRequest.queryWords, page,SearchRequest.country);
-			System.out.println("im urls salma");
 			
+			urls = dbM.getPharseSearch(SearchRequest.phrase, SearchRequest.queryWords, page,SearchRequest.country);	
 		}
 		else 
 		{
 			urls = dbM.getSearchResult(SearchRequest.queryWords,page, SearchRequest.country);
-			System.out.println("im urls nehal");
-			
+		
 		}
 		
         return urls;
@@ -102,7 +96,6 @@ public class DataHandler {
 			
 			list.add(tmp);	
 		}
-		System.out.println("im list");
 		return list;
 	}
 	

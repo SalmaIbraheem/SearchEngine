@@ -61,9 +61,9 @@ public class SearchRequest extends HttpServlet {
 		{
 			query = query.replaceAll("\"", "");
 			phraseFlag = true;
-			System.out.println("im salma");
+			
 			phrase = m.group(1);
-			System.out.println(m.group(1));
+		
 			line  = line.replaceAll(m.group(1),"");
 			line  = line.replace("\"","");
 			queryWords =  Stream.of(line.split("\\s+")).collect(Collectors.toCollection(ArrayList<String>::new));
@@ -73,11 +73,8 @@ public class SearchRequest extends HttpServlet {
 				queryWords.set(i, queryWords.get(i).toLowerCase());
 			
 			queryWords = stemmer.stem(queryWords);
-			System.out.println(line);
-			phrase = phrase.replaceAll("\\s+","");
-			System.out.println("phrase  "+phrase);
 			
-			System.out.println(queryWords);
+			phrase = phrase.replaceAll("\\s+","");
 		}
 		else {
 			phraseFlag = false;

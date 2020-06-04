@@ -37,12 +37,11 @@ public class PersonalizeServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		String link = request.getParameter("link");
-		System.out.println("personalize");
-		System.out.println(link);
+		
 		URL web = new URL(link);
 		String temp;
 		temp= web.getHost();
-		System.out.println(temp);
+		
 		mDB.setVisits(temp);
 		response.getWriter().write("yes");
 		// TODO Auto-generated method stub

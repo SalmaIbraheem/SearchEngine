@@ -41,12 +41,11 @@ public class SuggestServlet extends HttpServlet {
 		String str = request.getParameter("query").toLowerCase();
 		String tmp = str.replaceAll(" ", "");
 		
-		System.out.println("im suggest query");
-		System.out.println(str);
+		
 		try {
 			jarray = dbM.getQueries(str);
 			String JsonString = jarray.toJSONString();
-			System.out.println( JsonString);
+			
 			response.setContentType("application/json");
 			response.getWriter().write(JsonString);
 		} catch (SQLException e) {
