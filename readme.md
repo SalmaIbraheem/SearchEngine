@@ -12,5 +12,6 @@ Dependencies ->  jsoup.jar
 		 mssql-jdbc.jar
 		 opennlp-tools.jar
 
-In the link attached is a .bak file of a database that the program crawled and indexed.
-n7ot link l25r database hnrf3ha.
+In the link attached is a .bak file of a database that the program crawled and indexed so it could be
+used to preform queries on it
+-> 
