@@ -1,6 +1,8 @@
 # Angelica
 
-![Project Image] (https://drive.google.com/file/d/1agooS_mUJsXmGN2zQ8zKfNc7rIKEksfg/view?usp=sharing)
+Main Page                  |  Results List
+:-------------------------:|:-------------------------:
+![Project Image](https://drive.google.com/uc?export=view&id=1agooS_mUJsXmGN2zQ8zKfNc7rIKEksfg) | ![Project Image](https://drive.google.com/uc?export=view&id=1TJI6T69-azsKHGDrroYCcYGYvicHNBL3)
 
 > Search Engine Website
 
@@ -10,7 +12,8 @@
 sections header to referance location f the topic  
 
 - [Description](#description)
-- [How to Run](#how_to_run)
+- [Ranking](#ranking)
+- [How to Run](#how-to-run)
 - [Dependencies](#dependencies)
 
 ---
@@ -30,26 +33,28 @@ to accomplish that 4 main Modules:
 * JSP
 * HTML / CSS
 
+---
+
+## Ranking
+* Term_frequency-Inverse_document(TF-IDF) to rank relevance of a search query
+* The PageRank algorithm to rank the popularity of all pages
+* In geographical based ranking if the extension of the page is the same as the location of the search query then this page’s rank is increased by a default percentage to give a boost to the rank of this page
+* Personalized search, after the user click on a page the base url for this page is increased by certain percentage
+		
 ----
 
-## How To run :
-1* Connect to mssql and Create a database called search_engine in mssql
-2* Run the file called CrawlerMain.java to start crawling,indexing and ranking websites
-3* In the case that you stop the program before crawler finishes crawling its limit of pages you should run the Ranker.java module on its own to rank pages crawled so far as the popularity ranking starts after the crawler finishes to get more accurate results 
+## How To run
+* Connect to mssql and Create a database called search_engine in mssql
+* Run the file called CrawlerMain.java to start crawling,indexing and ranking websites
+* In the case that you stop the program before crawler finishes crawling its limit of pages you should run the Ranker.java module on its own to rank pages crawled so far as the popularity ranking starts after the crawler finishes to get more accurate results 
 			 
 ### To run the website 
-1* run tomcat
-2* run the main.jsp file on tomcat 
-
-### Ranking Phases:
-1* Term_frequency-Inverse_document(TF-IDF) to rank relevance of a search query
-2* The PageRank algorithm to rank the popularity of all pages
-3* In geographical based ranking if the extension of the page is the same as the location of the search query then this page’s rank is increased by a default percentage to give a boost to the rank of this page
-4* Personalized search, after the user click on a page the base url for this page is increased by certain percentage
-			
+* run tomcat
+* run the main.jsp file on tomcat 
+	
 ---
 				
-## Dependencies:
+## Dependencies
 - jsoup.jar 
 - servler-api.jar
 - json-simple.jar
